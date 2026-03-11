@@ -2,10 +2,8 @@
 require_once __DIR__ . '/../app/init.php';
 
 if (is_admin_logged_in()) {
-    header('Location: /public/dashboard.php');
-    exit;
+    redirect('dashboard.php');
 }
 
-header('Location: /public/login.php');
-exit;
+redirect('login.php');
 

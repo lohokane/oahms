@@ -16,7 +16,7 @@ $rooms = $roomsStmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <title>Rooms - OAHMS</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 <div class="layout">
@@ -25,14 +25,14 @@ $rooms = $roomsStmt->fetchAll();
         <nav class="sidebar-nav">
             <div>
                 <div class="nav-section-title">Overview</div>
-                <a class="nav-link" href="/public/dashboard.php"><span>Dashboard</span></a>
+                <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
-                <a class="nav-link" href="/public/residents.php"><span>Residents</span></a>
-                <a class="nav-link active" href="/public/rooms.php"><span>Rooms</span></a>
-                <a class="nav-link" href="/public/invoices.php"><span>Invoices</span></a>
-                <a class="nav-link" href="/public/payments.php"><span>Payments</span></a>
+                <a class="nav-link" href="residents.php"><span>Residents</span></a>
+                <a class="nav-link active" href="rooms.php"><span>Rooms</span></a>
+                <a class="nav-link" href="invoices.php"><span>Invoices</span></a>
+                <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
-                <a class="nav-link" href="/public/reports.php"><span>Reports</span></a>
+                <a class="nav-link" href="reports.php"><span>Reports</span></a>
             </div>
         </nav>
         <div class="sidebar-footer">
@@ -43,13 +43,13 @@ $rooms = $roomsStmt->fetchAll();
         <header class="topbar">
             <div class="topbar-title">Rooms</div>
             <div class="topbar-user">
-                <a class="btn btn-secondary btn-sm" href="/public/logout.php">Logout</a>
+                <a class="btn btn-secondary btn-sm" href="logout.php">Logout</a>
             </div>
         </header>
         <section class="content">
             <div class="page-title">
                 <h1>Rooms</h1>
-                <a href="/public/room_form.php" class="btn btn-sm">Add room</a>
+                <a href="room_form.php" class="btn btn-sm">Add room</a>
             </div>
 
             <div class="table-wrapper">
@@ -87,7 +87,7 @@ $rooms = $roomsStmt->fetchAll();
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a class="btn btn-secondary btn-sm" href="/public/room_form.php?id=<?= (int)$room['id'] ?>">Edit</a>
+                                    <a class="btn btn-secondary btn-sm" href="room_form.php?id=<?= (int)$room['id'] ?>">Edit</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -100,7 +100,7 @@ $rooms = $roomsStmt->fetchAll();
         </section>
     </main>
 </div>
-<script src="/assets/js/main.js"></script>
+<script src="../assets/js/main.js"></script>
 </body>
 </html>
 

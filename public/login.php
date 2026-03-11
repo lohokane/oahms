@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please enter both username and password.';
     } else {
         if (login_admin($username, $password)) {
-            redirect('/public/dashboard.php');
+            redirect('dashboard.php');
         } else {
             $error = 'Invalid username or password.';
         }
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Admin Login - OAHMS</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body class="login-page">
 <div class="login-card">
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         OAHMS &mdash; Old Age Home Management System
     </div>
 </div>
-<script src="/assets/js/main.js"></script>
+<script src="../assets/js/main.js"></script>
 </body>
 </html>
 

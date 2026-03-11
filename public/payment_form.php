@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Record Payment - OAHMS</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 <div class="layout">
@@ -109,14 +109,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <nav class="sidebar-nav">
             <div>
                 <div class="nav-section-title">Overview</div>
-                <a class="nav-link" href="/public/dashboard.php"><span>Dashboard</span></a>
+                <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
-                <a class="nav-link" href="/public/residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="/public/rooms.php"><span>Rooms</span></a>
-                <a class="nav-link" href="/public/invoices.php"><span>Invoices</span></a>
-                <a class="nav-link active" href="/public/payments.php"><span>Payments</span></a>
+                <a class="nav-link" href="residents.php"><span>Residents</span></a>
+                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
+                <a class="nav-link" href="invoices.php"><span>Invoices</span></a>
+                <a class="nav-link active" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
-                <a class="nav-link" href="/public/reports.php"><span>Reports</span></a>
+                <a class="nav-link" href="reports.php"><span>Reports</span></a>
             </div>
         </nav>
         <div class="sidebar-footer">
@@ -127,13 +127,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <header class="topbar">
             <div class="topbar-title">Record Payment</div>
             <div class="topbar-user">
-                <a class="btn btn-secondary btn-sm" href="/public/logout.php">Logout</a>
+                <a class="btn btn-secondary btn-sm" href="logout.php">Logout</a>
             </div>
         </header>
         <section class="content">
             <div class="page-title">
                 <h1>Record Payment</h1>
-                <a href="/public/payments.php" class="btn btn-secondary btn-sm">Back to list</a>
+                <a href="payments.php" class="btn btn-secondary btn-sm">Back to list</a>
             </div>
 
             <div class="card form-card">
@@ -182,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <textarea class="form-textarea" id="notes" name="notes"><?= h($data['notes']) ?></textarea>
                     </div>
                     <div class="form-actions">
-                        <a href="/public/payments.php" class="btn btn-secondary btn-sm">Cancel</a>
+                        <a href="payments.php" class="btn btn-secondary btn-sm">Cancel</a>
                         <button class="btn btn-sm" type="submit">Save payment</button>
                     </div>
                 </form>
@@ -190,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
     </main>
 </div>
-<script src="/assets/js/main.js"></script>
+<script src="../assets/js/main.js"></script>
 </body>
 </html>
 

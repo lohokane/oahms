@@ -41,7 +41,7 @@ $invoices = $stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <title>Invoices - OAHMS</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
 <div class="layout">
@@ -50,14 +50,14 @@ $invoices = $stmt->fetchAll();
         <nav class="sidebar-nav">
             <div>
                 <div class="nav-section-title">Overview</div>
-                <a class="nav-link" href="/public/dashboard.php"><span>Dashboard</span></a>
+                <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
-                <a class="nav-link" href="/public/residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="/public/rooms.php"><span>Rooms</span></a>
-                <a class="nav-link active" href="/public/invoices.php"><span>Invoices</span></a>
-                <a class="nav-link" href="/public/payments.php"><span>Payments</span></a>
+                <a class="nav-link" href="residents.php"><span>Residents</span></a>
+                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
+                <a class="nav-link active" href="invoices.php"><span>Invoices</span></a>
+                <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
-                <a class="nav-link" href="/public/reports.php"><span>Reports</span></a>
+                <a class="nav-link" href="reports.php"><span>Reports</span></a>
             </div>
         </nav>
         <div class="sidebar-footer">
@@ -68,15 +68,15 @@ $invoices = $stmt->fetchAll();
         <header class="topbar">
             <div class="topbar-title">Invoices</div>
             <div class="topbar-user">
-                <a class="btn btn-secondary btn-sm" href="/public/logout.php">Logout</a>
+                <a class="btn btn-secondary btn-sm" href="logout.php">Logout</a>
             </div>
         </header>
         <section class="content">
             <div class="page-title">
                 <h1>Invoices</h1>
                 <div>
-                    <a href="/public/invoice_form.php" class="btn btn-sm">New invoice</a>
-                    <a href="/public/invoice_generate.php" class="btn btn-secondary btn-sm">Generate monthly</a>
+                    <a href="invoice_form.php" class="btn btn-sm">New invoice</a>
+                    <a href="invoice_generate.php" class="btn btn-secondary btn-sm">Generate monthly</a>
                 </div>
             </div>
 
@@ -143,7 +143,7 @@ $invoices = $stmt->fetchAll();
         </section>
     </main>
 </div>
-<script src="/assets/js/main.js"></script>
+<script src="../assets/js/main.js"></script>
 </body>
 </html>
 
