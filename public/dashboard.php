@@ -83,7 +83,7 @@ try {
 <div class="layout">
     <aside class="sidebar">
         <div class="sidebar-header">
-            OAHMS
+                        <img src="../assets/images/logo.jpg" class="logo" alt="Logo" loading="eager" fetchpriority="high" width="100px">
         </div>
         <nav class="sidebar-nav">
             <div>
