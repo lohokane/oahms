@@ -22,7 +22,24 @@ function login_admin(string $username, string $password): bool
         return false;
     }
 
-    if (!password_verify($password, $admin['password_hash'])) {
+    $stored = (string)($admin['password_hash'] ?? '');
+
+    // Normal path: stored hash created by password_hash().
+    $ok = password_verify($password, $stored);
+
+    // Backward-compatible path: if a plain password was stored by mistake,
+    // allow login once and upgrade to a secure hash.
+    if (!$ok && $stored !== '' && hash_equals($stored, $password)) {
+        $ok = true;
+        $newHash = password_hash($password, PASSWORD_DEFAULT);
+        $upd = $pdo->prepare('UPDATE admins SET password_hash = :hash WHERE id = :id');
+        $upd->execute([
+            ':hash' => $newHash,
+            ':id'   => (int)$admin['id'],
+        ]);
+    }
+
+    if (!$ok) {
         return false;
     }
 
@@ -65,7 +82,7 @@ function is_admin_logged_in(): bool
 function require_admin_login(): void
 {
     if (!is_admin_logged_in()) {
-        header('Location: /public/login.php');
+        header('Location: login.php');
         exit;
     }
 }
