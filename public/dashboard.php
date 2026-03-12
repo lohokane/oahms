@@ -6,7 +6,7 @@ $pdo = get_db();
 
 // Summary cards
 $totalResidents = (int) $pdo->query('SELECT COUNT(*) AS c FROM residents')->fetch()['c'] ?? 0;
-$availableRooms = (int) $pdo->query('SELECT COUNT(*) AS c FROM rooms WHERE current_occupancy < capacity')->fetch()['c'] ?? 0;
+$activeResidents = (int) $pdo->query("SELECT COUNT(*) AS c FROM residents WHERE status = 'Active'")->fetch()['c'] ?? 0;
 $pendingInvoices = (int) $pdo->query("SELECT COUNT(*) AS c FROM invoices WHERE payment_status = 'PENDING'")->fetch()['c'] ?? 0;
 
 $stmtMonth = $pdo->query("SELECT IFNULL(SUM(payment_amount), 0) AS total FROM payments WHERE DATE_FORMAT(payment_date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')");
@@ -48,7 +48,6 @@ $recentPayments = $pdo->query('
                 <a class="nav-link active" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
@@ -80,9 +79,9 @@ $recentPayments = $pdo->query('
                 </div>
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">Available rooms</div>
+                        <div class="card-title">Active residents</div>
                     </div>
-                    <div class="card-value"><?= number_format($availableRooms) ?></div>
+                    <div class="card-value"><?= number_format($activeResidents) ?></div>
                 </div>
                 <div class="card">
                     <div class="card-header">

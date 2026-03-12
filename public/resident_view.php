@@ -9,14 +9,7 @@ if ($id <= 0) {
     redirect('residents.php');
 }
 
-$stmt = $pdo->prepare('
-    SELECT r.*,
-           rm.room_number,
-           rm.room_type
-    FROM residents r
-    LEFT JOIN rooms rm ON rm.id = r.room_id
-    WHERE r.id = :id
-');
+$stmt = $pdo->prepare('SELECT * FROM residents WHERE id = :id');
 $stmt->execute([':id' => $id]);
 $resident = $stmt->fetch();
 
@@ -43,7 +36,6 @@ if (!$resident) {
                 <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link active" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
@@ -73,45 +65,49 @@ if (!$resident) {
             <div class="card form-card">
                 <div class="form-grid">
                     <div class="form-group">
-                        <div class="form-label">Resident ID</div>
-                        <div><?= h($resident['resident_identifier']) ?></div>
+                        <div class="form-label">Full name</div>
+                        <div><?= h($resident['full_name']) ?></div>
                     </div>
                     <div class="form-group">
                         <div class="form-label">Gender</div>
                         <div><?= h($resident['gender']) ?></div>
                     </div>
                     <div class="form-group">
-                        <div class="form-label">Age</div>
-                        <div><?= (int)$resident['age'] ?></div>
+                        <div class="form-label">Date of birth</div>
+                        <div><?= h($resident['date_of_birth'] ?? '-') ?></div>
                     </div>
                     <div class="form-group">
                         <div class="form-label">Status</div>
                         <div><?= h($resident['status']) ?></div>
                     </div>
                     <div class="form-group">
-                        <div class="form-label">Contact number</div>
-                        <div><?= h($resident['contact_number']) ?></div>
+                        <div class="form-label">Room number</div>
+                        <div><?= h($resident['room_number'] ?? '-') ?></div>
                     </div>
                     <div class="form-group">
-                        <div class="form-label">Emergency contact</div>
-                        <div><?= h($resident['emergency_contact']) ?></div>
+                        <div class="form-label">Bed number</div>
+                        <div><?= h($resident['bed_number'] ?? '-') ?></div>
                     </div>
                     <div class="form-group">
-                        <div class="form-label">Admission date</div>
-                        <div><?= h($resident['admission_date']) ?></div>
+                        <div class="form-label">Guardian name</div>
+                        <div><?= h($resident['guardian_name'] ?? '-') ?></div>
                     </div>
                     <div class="form-group">
-                        <div class="form-label">Room</div>
-                        <div>
-                            <?= $resident['room_number']
-                                ? h($resident['room_number'] . ' (' . $resident['room_type'] . ')')
-                                : '-' ?>
-                        </div>
+                        <div class="form-label">Guardian phone</div>
+                        <div><?= h($resident['guardian_phone'] ?? '-') ?></div>
                     </div>
-                </div>
-                <div class="form-group" style="margin-top: 1rem;">
-                    <div class="form-label">Address</div>
-                    <div><?= nl2br(h($resident['address'])) ?></div>
+                    <div class="form-group">
+                        <div class="form-label">Alternate contact</div>
+                        <div><?= h($resident['alternate_contact_number'] ?? '-') ?></div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-label">Monthly fee</div>
+                        <div>₹<?= number_format((float)($resident['monthly_fee'] ?? 0), 2) ?></div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-label">Joining date</div>
+                        <div><?= h($resident['joining_date'] ?? '-') ?></div>
+                    </div>
                 </div>
             </div>
         </section>

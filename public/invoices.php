@@ -27,7 +27,8 @@ $stmt = $pdo->prepare("
            i.total_amount,
            i.payment_status,
            r.full_name,
-           r.resident_identifier
+           r.room_number,
+           r.bed_number
     FROM invoices i
     JOIN residents r ON r.id = i.resident_id
     $whereSql
@@ -53,7 +54,6 @@ $invoices = $stmt->fetchAll();
                 <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link active" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
@@ -120,7 +120,12 @@ $invoices = $stmt->fetchAll();
                     <?php if ($invoices): ?>
                         <?php foreach ($invoices as $inv): ?>
                             <tr>
-                                <td><?= h($inv['full_name']) ?> (<?= h($inv['resident_identifier']) ?>)</td>
+                                <td>
+                                    <?= h($inv['full_name']) ?>
+                                    <?php if (!empty($inv['room_number']) || !empty($inv['bed_number'])): ?>
+                                        <span class="card-pill">Room <?= h($inv['room_number'] ?? '-') ?> / Bed <?= h($inv['bed_number'] ?? '-') ?></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= h($inv['billing_month']) ?></td>
                                 <td>₹<?= number_format((float)$inv['total_amount'], 2) ?></td>
                                 <td>

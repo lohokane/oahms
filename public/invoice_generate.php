@@ -8,11 +8,10 @@ $targetMonth = $_POST['billing_month'] ?? date('Y-m');
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // For all active residents with a room, create invoice if not exists for month.
+    // For all active residents, create invoice if not exists for month.
     $stmtRes = $pdo->prepare('
-        SELECT r.id AS resident_id, r.full_name, rm.monthly_rent
+        SELECT r.id AS resident_id, r.full_name, r.monthly_fee
         FROM residents r
-        JOIN rooms rm ON rm.id = r.room_id
         WHERE r.status = "Active"
     ');
     $stmtRes->execute();
@@ -37,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             continue;
         }
 
-        $rent = (float)$res['monthly_rent'];
+        $rent = (float)$res['monthly_fee'];
         $insertStmt->execute([
             ':resident_id'   => $res['resident_id'],
             ':billing_month' => $targetMonth,
@@ -67,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link active" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>

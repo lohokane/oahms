@@ -8,32 +8,23 @@ CREATE TABLE admins (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE rooms (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    room_number VARCHAR(20) NOT NULL UNIQUE,
-    room_type ENUM('Single', 'Double', 'Shared') NOT NULL,
-    capacity TINYINT UNSIGNED NOT NULL,
-    current_occupancy TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    monthly_rent DECIMAL(10,2) NOT NULL,
-    status ENUM('Available', 'Occupied', 'Inactive') NOT NULL DEFAULT 'Available',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE residents (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    resident_identifier VARCHAR(30) NOT NULL UNIQUE,
     full_name VARCHAR(150) NOT NULL,
+    date_of_birth DATE NULL,
     gender ENUM('Male', 'Female', 'Other') NOT NULL,
-    age TINYINT UNSIGNED NOT NULL,
-    contact_number VARCHAR(30),
-    emergency_contact VARCHAR(100),
-    address TEXT,
-    admission_date DATE NOT NULL,
-    room_id INT UNSIGNED NULL,
-    status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active',
+    room_number VARCHAR(20) NULL,
+    bed_number VARCHAR(20) NULL,
+    guardian_name VARCHAR(150) NULL,
+    guardian_phone VARCHAR(30) NULL,
+    alternate_contact_number VARCHAR(30) NULL,
+    monthly_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+    joining_date DATE NOT NULL,
+    status ENUM('Active', 'Deceased', 'Discharged') NOT NULL DEFAULT 'Active',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_residents_room FOREIGN KEY (room_id) REFERENCES rooms(id)
-        ON UPDATE CASCADE ON DELETE SET NULL
+    INDEX idx_residents_status (status),
+    INDEX idx_residents_room (room_number),
+    INDEX idx_residents_joining (joining_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE invoices (

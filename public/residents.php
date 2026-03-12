@@ -5,32 +5,65 @@ require_admin_login();
 $pdo = get_db();
 
 $search = trim($_GET['q'] ?? '');
+$sort = $_GET['sort'] ?? 'created_at';
+$dir = strtolower($_GET['dir'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
 $params = [];
-$where = '';
+$whereParts = [];
 
 if ($search !== '') {
-    $where = "WHERE r.full_name LIKE :q OR r.resident_identifier LIKE :q";
-    $params[':q'] = '%' . $search . '%';
+    $whereParts[] = "(r.full_name LIKE :q1 OR r.room_number LIKE :q2 OR r.guardian_phone LIKE :q3)";
+    $params[':q1'] = '%' . $search . '%';
+    $params[':q2'] = '%' . $search . '%';
+    $params[':q3'] = '%' . $search . '%';
 }
+
+$where = $whereParts ? ('WHERE ' . implode(' AND ', $whereParts)) : '';
+
+$sortMap = [
+    'name' => 'r.full_name',
+    'room' => 'r.room_number',
+    'joining_date' => 'r.joining_date',
+    'monthly_fee' => 'r.monthly_fee',
+    'status' => 'r.status',
+    'created_at' => 'r.created_at',
+];
+$sortCol = $sortMap[$sort] ?? $sortMap['created_at'];
 
 $sql = "
     SELECT r.id,
-           r.resident_identifier,
            r.full_name,
+           r.date_of_birth,
            r.gender,
-           r.age,
+           r.room_number,
+           r.bed_number,
+           r.guardian_name,
+           r.guardian_phone,
+           r.alternate_contact_number,
+           r.monthly_fee,
            r.status,
-           r.admission_date,
-           rm.room_number
+           r.joining_date
     FROM residents r
-    LEFT JOIN rooms rm ON rm.id = r.room_id
     $where
-    ORDER BY r.created_at DESC
+    ORDER BY $sortCol $dir
 ";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $residents = $stmt->fetchAll();
+
+function sort_link(string $label, string $key, string $currentSort, string $currentDir, string $search): string
+{
+    $nextDir = 'asc';
+    if ($currentSort === $key && strtoupper($currentDir) === 'ASC') {
+        $nextDir = 'desc';
+    }
+    $qs = http_build_query([
+        'q' => $search,
+        'sort' => $key,
+        'dir' => $nextDir,
+    ]);
+    return '<a href="residents.php?' . h($qs) . '">' . h($label) . '</a>';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -51,7 +84,6 @@ $residents = $stmt->fetchAll();
                 <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link active" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
@@ -79,7 +111,7 @@ $residents = $stmt->fetchAll();
                 <form method="get">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label" for="q">Search (name or ID)</label>
+                            <label class="form-label" for="q">Search (name / room / guardian phone)</label>
                             <input class="form-input" type="text" id="q" name="q" value="<?= h($search) ?>">
                         </div>
                     </div>
@@ -96,13 +128,13 @@ $residents = $stmt->fetchAll();
                 <table class="table">
                     <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
+                        <th><?= sort_link('Name', 'name', (string)$sort, (string)$dir, $search) ?></th>
+                        <th><?= sort_link('Room', 'room', (string)$sort, (string)$dir, $search) ?></th>
+                        <th>Bed</th>
                         <th>Gender</th>
-                        <th>Age</th>
-                        <th>Room</th>
-                        <th>Status</th>
-                        <th>Admission</th>
+                        <th><?= sort_link('Monthly fee', 'monthly_fee', (string)$sort, (string)$dir, $search) ?></th>
+                        <th><?= sort_link('Status', 'status', (string)$sort, (string)$dir, $search) ?></th>
+                        <th><?= sort_link('Joining date', 'joining_date', (string)$sort, (string)$dir, $search) ?></th>
                         <th>Actions</th>
                     </tr>
                     </thead>
@@ -110,19 +142,21 @@ $residents = $stmt->fetchAll();
                     <?php if ($residents): ?>
                         <?php foreach ($residents as $res): ?>
                             <tr>
-                                <td><?= h($res['resident_identifier']) ?></td>
                                 <td><?= h($res['full_name']) ?></td>
-                                <td><?= h($res['gender']) ?></td>
-                                <td><?= (int) $res['age'] ?></td>
                                 <td><?= h($res['room_number'] ?? '-') ?></td>
+                                <td><?= h($res['bed_number'] ?? '-') ?></td>
+                                <td><?= h($res['gender']) ?></td>
+                                <td>₹<?= number_format((float)$res['monthly_fee'], 2) ?></td>
                                 <td>
                                     <?php if ($res['status'] === 'Active'): ?>
                                         <span class="badge badge-success">Active</span>
+                                    <?php elseif ($res['status'] === 'Deceased'): ?>
+                                        <span class="badge badge-danger">Deceased</span>
                                     <?php else: ?>
-                                        <span class="badge badge-warning">Inactive</span>
+                                        <span class="badge badge-warning">Discharged</span>
                                     <?php endif; ?>
                                 </td>
-                                    <td><?= h($res['admission_date']) ?></td>
+                                <td><?= h($res['joining_date']) ?></td>
                                 <td>
                                     <a class="btn btn-secondary btn-sm" href="resident_view.php?id=<?= (int)$res['id'] ?>">View</a>
                                     <a class="btn btn-secondary btn-sm" href="resident_form.php?id=<?= (int)$res['id'] ?>">Edit</a>

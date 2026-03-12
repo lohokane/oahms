@@ -7,7 +7,7 @@ $pdo = get_db();
 // For simplicity this form only creates invoices (no edit).
 
 // Residents for dropdown
-$resStmt = $pdo->query('SELECT id, full_name, resident_identifier FROM residents WHERE status = \"Active\" ORDER BY full_name ASC');
+$resStmt = $pdo->query("SELECT id, full_name, monthly_fee FROM residents WHERE status = 'Active' ORDER BY full_name ASC");
 $residents = $resStmt->fetchAll();
 
 $data = [
@@ -79,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link active" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
@@ -117,8 +116,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <select class="form-select" id="resident_id" name="resident_id" required>
                                 <option value="">-- Select resident --</option>
                                 <?php foreach ($residents as $res): ?>
-                                    <option value="<?= (int)$res['id'] ?>" <?= (int)$data['resident_id'] === (int)$res['id'] ? 'selected' : '' ?>>
-                                        <?= h($res['full_name'] . ' (' . $res['resident_identifier'] . ')') ?>
+                                    <option value="<?= (int)$res['id'] ?>"
+                                            data-monthly-fee="<?= h((string)$res['monthly_fee']) ?>"
+                                            <?= (int)$data['resident_id'] === (int)$res['id'] ? 'selected' : '' ?>>
+                                        <?= h($res['full_name']) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>

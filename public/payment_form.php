@@ -112,7 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link active" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>

@@ -7,21 +7,18 @@ $pdo = get_db();
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $isEdit = $id > 0;
 
-// Fetch rooms for dropdown
-$roomsStmt = $pdo->query('SELECT id, room_number, capacity, current_occupancy FROM rooms ORDER BY room_number ASC');
-$rooms = $roomsStmt->fetchAll();
-
 $resident = [
-    'resident_identifier' => '',
-    'full_name'           => '',
-    'gender'              => 'Male',
-    'age'                 => '',
-    'contact_number'      => '',
-    'emergency_contact'   => '',
-    'address'             => '',
-    'admission_date'      => date('Y-m-d'),
-    'room_id'             => null,
-    'status'              => 'Active',
+    'full_name'                 => '',
+    'date_of_birth'             => null,
+    'gender'                    => 'Male',
+    'room_number'               => '',
+    'bed_number'                => '',
+    'guardian_name'             => '',
+    'guardian_phone'            => '',
+    'alternate_contact_number'  => '',
+    'monthly_fee'               => 0,
+    'joining_date'              => date('Y-m-d'),
+    'status'                    => 'Active',
 ];
 
 if ($isEdit) {
@@ -38,53 +35,56 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $resident['resident_identifier'] = trim($_POST['resident_identifier'] ?? '');
     $resident['full_name'] = trim($_POST['full_name'] ?? '');
+    $resident['date_of_birth'] = $_POST['date_of_birth'] !== '' ? $_POST['date_of_birth'] : null;
     $resident['gender'] = $_POST['gender'] ?? 'Male';
-    $resident['age'] = (int) ($_POST['age'] ?? 0);
-    $resident['contact_number'] = trim($_POST['contact_number'] ?? '');
-    $resident['emergency_contact'] = trim($_POST['emergency_contact'] ?? '');
-    $resident['address'] = trim($_POST['address'] ?? '');
-    $resident['admission_date'] = $_POST['admission_date'] ?? date('Y-m-d');
-    $resident['room_id'] = $_POST['room_id'] !== '' ? (int) $_POST['room_id'] : null;
+    $resident['room_number'] = trim($_POST['room_number'] ?? '');
+    $resident['bed_number'] = trim($_POST['bed_number'] ?? '');
+    $resident['guardian_name'] = trim($_POST['guardian_name'] ?? '');
+    $resident['guardian_phone'] = trim($_POST['guardian_phone'] ?? '');
+    $resident['alternate_contact_number'] = trim($_POST['alternate_contact_number'] ?? '');
+    $resident['monthly_fee'] = (float) ($_POST['monthly_fee'] ?? 0);
+    $resident['joining_date'] = $_POST['joining_date'] ?? date('Y-m-d');
     $resident['status'] = $_POST['status'] ?? 'Active';
 
-    if ($resident['resident_identifier'] === '' || $resident['full_name'] === '') {
-        $error = 'Resident ID and full name are required.';
-    } elseif ($resident['age'] <= 0) {
-        $error = 'Please enter a valid age.';
+    if ($resident['full_name'] === '') {
+        $error = 'Full name is required.';
+    } elseif ($resident['monthly_fee'] < 0) {
+        $error = 'Monthly fee cannot be negative.';
     } else {
         if ($isEdit) {
             $sql = 'UPDATE residents
-                    SET resident_identifier = :resident_identifier,
-                        full_name = :full_name,
+                    SET full_name = :full_name,
+                        date_of_birth = :date_of_birth,
                         gender = :gender,
-                        age = :age,
-                        contact_number = :contact_number,
-                        emergency_contact = :emergency_contact,
-                        address = :address,
-                        admission_date = :admission_date,
-                        room_id = :room_id,
+                        room_number = :room_number,
+                        bed_number = :bed_number,
+                        guardian_name = :guardian_name,
+                        guardian_phone = :guardian_phone,
+                        alternate_contact_number = :alternate_contact_number,
+                        monthly_fee = :monthly_fee,
+                        joining_date = :joining_date,
                         status = :status
                     WHERE id = :id';
         } else {
             $sql = 'INSERT INTO residents
-                    (resident_identifier, full_name, gender, age, contact_number, emergency_contact, address, admission_date, room_id, status)
+                    (full_name, date_of_birth, gender, room_number, bed_number, guardian_name, guardian_phone, alternate_contact_number, monthly_fee, joining_date, status)
                     VALUES
-                    (:resident_identifier, :full_name, :gender, :age, :contact_number, :emergency_contact, :address, :admission_date, :room_id, :status)';
+                    (:full_name, :date_of_birth, :gender, :room_number, :bed_number, :guardian_name, :guardian_phone, :alternate_contact_number, :monthly_fee, :joining_date, :status)';
         }
 
         $stmt = $pdo->prepare($sql);
         $params = [
-            ':resident_identifier' => $resident['resident_identifier'],
             ':full_name'           => $resident['full_name'],
+            ':date_of_birth'       => $resident['date_of_birth'],
             ':gender'              => $resident['gender'],
-            ':age'                 => $resident['age'],
-            ':contact_number'      => $resident['contact_number'],
-            ':emergency_contact'   => $resident['emergency_contact'],
-            ':address'             => $resident['address'],
-            ':admission_date'      => $resident['admission_date'],
-            ':room_id'             => $resident['room_id'],
+            ':room_number'         => $resident['room_number'] !== '' ? $resident['room_number'] : null,
+            ':bed_number'          => $resident['bed_number'] !== '' ? $resident['bed_number'] : null,
+            ':guardian_name'       => $resident['guardian_name'] !== '' ? $resident['guardian_name'] : null,
+            ':guardian_phone'      => $resident['guardian_phone'] !== '' ? $resident['guardian_phone'] : null,
+            ':alternate_contact_number' => $resident['alternate_contact_number'] !== '' ? $resident['alternate_contact_number'] : null,
+            ':monthly_fee'         => $resident['monthly_fee'],
+            ':joining_date'        => $resident['joining_date'],
             ':status'              => $resident['status'],
         ];
 
@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $success = 'Resident saved successfully.';
         } catch (PDOException $e) {
-            $error = 'Error saving resident. Please ensure the Resident ID is unique.';
+            $error = 'Error saving resident.';
         }
     }
 }
@@ -124,7 +124,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link active" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
@@ -158,14 +157,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <form method="post">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label" for="resident_identifier">Resident ID</label>
-                            <input class="form-input" type="text" id="resident_identifier" name="resident_identifier"
-                                   value="<?= h($resident['resident_identifier']) ?>" required>
-                        </div>
-                        <div class="form-group">
                             <label class="form-label" for="full_name">Full name</label>
                             <input class="form-input" type="text" id="full_name" name="full_name"
                                    value="<?= h($resident['full_name']) ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="date_of_birth">Date of birth</label>
+                            <input class="form-input" type="date" id="date_of_birth" name="date_of_birth"
+                                   value="<?= h($resident['date_of_birth'] ? (string)$resident['date_of_birth'] : '') ?>">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="gender">Gender</label>
@@ -176,50 +175,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="age">Age</label>
-                            <input class="form-input" type="number" id="age" name="age" min="1"
-                                   value="<?= h((string)$resident['age']) ?>" required>
+                            <label class="form-label" for="room_number">Room number</label>
+                            <input class="form-input" type="text" id="room_number" name="room_number"
+                                   value="<?= h($resident['room_number'] ?? '') ?>">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="contact_number">Contact number</label>
-                            <input class="form-input" type="text" id="contact_number" name="contact_number"
-                                   value="<?= h($resident['contact_number']) ?>">
+                            <label class="form-label" for="bed_number">Bed number</label>
+                            <input class="form-input" type="text" id="bed_number" name="bed_number"
+                                   value="<?= h($resident['bed_number'] ?? '') ?>">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="emergency_contact">Emergency contact</label>
-                            <input class="form-input" type="text" id="emergency_contact" name="emergency_contact"
-                                   value="<?= h($resident['emergency_contact']) ?>">
+                            <label class="form-label" for="guardian_name">Guardian name</label>
+                            <input class="form-input" type="text" id="guardian_name" name="guardian_name"
+                                   value="<?= h($resident['guardian_name'] ?? '') ?>">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="admission_date">Admission date</label>
-                            <input class="form-input" type="date" id="admission_date" name="admission_date"
-                                   value="<?= h($resident['admission_date']) ?>" required>
+                            <label class="form-label" for="guardian_phone">Guardian phone</label>
+                            <input class="form-input" type="text" id="guardian_phone" name="guardian_phone"
+                                   value="<?= h($resident['guardian_phone'] ?? '') ?>">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="room_id">Assigned room</label>
-                            <select class="form-select" id="room_id" name="room_id">
-                                <option value="">-- None --</option>
-                                <?php foreach ($rooms as $room): ?>
-                                    <?php
-                                    $label = $room['room_number'] . ' (' . $room['current_occupancy'] . '/' . $room['capacity'] . ')';
-                                    ?>
-                                    <option value="<?= (int)$room['id'] ?>" <?= (int)$resident['room_id'] === (int)$room['id'] ? 'selected' : '' ?>>
-                                        <?= h($label) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label class="form-label" for="alternate_contact_number">Alternate contact</label>
+                            <input class="form-input" type="text" id="alternate_contact_number" name="alternate_contact_number"
+                                   value="<?= h($resident['alternate_contact_number'] ?? '') ?>">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="monthly_fee">Monthly fee</label>
+                            <input class="form-input" type="number" step="0.01" min="0" id="monthly_fee" name="monthly_fee"
+                                   value="<?= h((string)$resident['monthly_fee']) ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="joining_date">Joining date</label>
+                            <input class="form-input" type="date" id="joining_date" name="joining_date"
+                                   value="<?= h((string)$resident['joining_date']) ?>" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="status">Status</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="Active" <?= $resident['status'] === 'Active' ? 'selected' : '' ?>>Active</option>
-                                <option value="Inactive" <?= $resident['status'] === 'Inactive' ? 'selected' : '' ?>>Inactive</option>
+                                <option value="Deceased" <?= $resident['status'] === 'Deceased' ? 'selected' : '' ?>>Deceased</option>
+                                <option value="Discharged" <?= $resident['status'] === 'Discharged' ? 'selected' : '' ?>>Discharged</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-group" style="margin-top: 1rem;">
-                        <label class="form-label" for="address">Address</label>
-                        <textarea class="form-textarea" id="address" name="address"><?= h($resident['address']) ?></textarea>
                     </div>
                     <div class="form-actions">
                         <a href="residents.php" class="btn btn-secondary btn-sm">Cancel</a>

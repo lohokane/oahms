@@ -6,30 +6,40 @@ $pdo = get_db();
 
 $month = $_GET['month'] ?? date('Y-m');
 
-// Monthly revenue
+// Monthly revenue (date range to avoid collation issues)
+try {
+    $start = new DateTime($month . '-01');
+} catch (Exception $e) {
+    $start = new DateTime(date('Y-m') . '-01');
+    $month = $start->format('Y-m');
+}
+$end = (clone $start)->modify('+1 month');
+
 $stmtRev = $pdo->prepare('
     SELECT IFNULL(SUM(payment_amount), 0) AS total
     FROM payments
-    WHERE DATE_FORMAT(payment_date, "%Y-%m") = :month
+    WHERE payment_date >= :start AND payment_date < :end
 ');
-$stmtRev->execute([':month' => $month]);
+$stmtRev->execute([
+    ':start' => $start->format('Y-m-d'),
+    ':end'   => $end->format('Y-m-d'),
+]);
 $monthlyRevenue = (float)$stmtRev->fetch()['total'];
 
 // Pending payments (invoices)
 $pendingInvoices = $pdo->query('
     SELECT i.id, i.billing_month, i.total_amount, i.payment_status,
-           r.full_name, r.resident_identifier
+           r.full_name, r.room_number, r.bed_number
     FROM invoices i
     JOIN residents r ON r.id = i.resident_id
     WHERE i.payment_status = "PENDING"
     ORDER BY i.billing_month DESC, r.full_name ASC
 ')->fetchAll();
 
-// Occupancy: count active residents and capacity
+// Resident status summary
 $activeResidents = (int)$pdo->query('SELECT COUNT(*) AS c FROM residents WHERE status = "Active"')->fetch()['c'];
-$rooms = $pdo->query('SELECT COUNT(*) AS total_rooms, IFNULL(SUM(capacity),0) AS total_capacity FROM rooms')->fetch();
-$totalRooms = (int)$rooms['total_rooms'];
-$totalCapacity = (int)$rooms['total_capacity'];
+$deceasedResidents = (int)$pdo->query('SELECT COUNT(*) AS c FROM residents WHERE status = "Deceased"')->fetch()['c'];
+$dischargedResidents = (int)$pdo->query('SELECT COUNT(*) AS c FROM residents WHERE status = "Discharged"')->fetch()['c'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -48,7 +58,6 @@ $totalCapacity = (int)$rooms['total_capacity'];
                 <a class="nav-link" href="dashboard.php"><span>Dashboard</span></a>
                 <div class="nav-section-title">Management</div>
                 <a class="nav-link" href="residents.php"><span>Residents</span></a>
-                <a class="nav-link" href="rooms.php"><span>Rooms</span></a>
                 <a class="nav-link" href="invoices.php"><span>Invoices</span></a>
                 <a class="nav-link" href="payments.php"><span>Payments</span></a>
                 <div class="nav-section-title">Reports</div>
@@ -100,10 +109,10 @@ $totalCapacity = (int)$rooms['total_capacity'];
                 </div>
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">Rooms / Capacity</div>
+                        <div class="card-title">Deceased / Discharged</div>
                     </div>
                     <div class="card-value">
-                        <?= number_format($totalRooms) ?> rooms / <?= number_format($totalCapacity) ?> beds
+                        <?= number_format($deceasedResidents) ?> / <?= number_format($dischargedResidents) ?>
                     </div>
                 </div>
             </div>
@@ -125,7 +134,12 @@ $totalCapacity = (int)$rooms['total_capacity'];
                     <?php if ($pendingInvoices): ?>
                         <?php foreach ($pendingInvoices as $inv): ?>
                             <tr>
-                                <td><?= h($inv['full_name']) ?> (<?= h($inv['resident_identifier']) ?>)</td>
+                                <td>
+                                    <?= h($inv['full_name']) ?>
+                                    <?php if (!empty($inv['room_number']) || !empty($inv['bed_number'])): ?>
+                                        <span class="card-pill">Room <?= h($inv['room_number'] ?? '-') ?> / Bed <?= h($inv['bed_number'] ?? '-') ?></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= h($inv['billing_month']) ?></td>
                                 <td>₹<?= number_format((float)$inv['total_amount'], 2) ?></td>
                                 <td><span class="badge badge-warning"><?= h($inv['payment_status']) ?></span></td>
