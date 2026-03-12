@@ -30,46 +30,47 @@ $recentPayments = $pdo->query('
 ')->fetchAll();
 
 // Upcoming birthdays (next 30 days)
+// Use numeric month-day (MMDD) comparisons to avoid collation issues on some MariaDB setups.
+$upcomingBirthdays = [];
 try {
     $start = new DateTime('today');
+    $end = (clone $start)->modify('+30 days');
+
+    $startKey = (int)$start->format('md'); // e.g. 0312
+    $endKey = (int)$end->format('md');
+
+    if ($startKey <= $endKey) {
+        $sqlBirthdays = "
+            SELECT full_name, date_of_birth, room_number, bed_number
+            FROM residents
+            WHERE status = 'Active'
+              AND date_of_birth IS NOT NULL
+              AND ((MONTH(date_of_birth) * 100) + DAY(date_of_birth)) BETWEEN :start_key AND :end_key
+            ORDER BY ((MONTH(date_of_birth) * 100) + DAY(date_of_birth)) ASC, full_name ASC
+        ";
+        $paramsBirth = [':start_key' => $startKey, ':end_key' => $endKey];
+    } else {
+        // Window wraps year end; two ranges
+        $sqlBirthdays = "
+            SELECT full_name, date_of_birth, room_number, bed_number
+            FROM residents
+            WHERE status = 'Active'
+              AND date_of_birth IS NOT NULL
+              AND (
+                ((MONTH(date_of_birth) * 100) + DAY(date_of_birth)) >= :start_key
+                OR ((MONTH(date_of_birth) * 100) + DAY(date_of_birth)) <= :end_key
+              )
+            ORDER BY ((MONTH(date_of_birth) * 100) + DAY(date_of_birth)) ASC, full_name ASC
+        ";
+        $paramsBirth = [':start_key' => $startKey, ':end_key' => $endKey];
+    }
+
+    $stmtBirth = $pdo->prepare($sqlBirthdays);
+    $stmtBirth->execute($paramsBirth);
+    $upcomingBirthdays = $stmtBirth->fetchAll();
 } catch (Exception $e) {
-    $start = new DateTime();
+    $upcomingBirthdays = [];
 }
-$end = (clone $start)->modify('+30 days');
-
-$startMd = $start->format('m-d');
-$endMd = $end->format('m-d');
-
-if ($startMd <= $endMd) {
-    // Simple case within same year segment
-    $sqlBirthdays = "
-        SELECT full_name, date_of_birth, room_number, bed_number
-        FROM residents
-        WHERE status = 'Active'
-          AND date_of_birth IS NOT NULL
-          AND DATE_FORMAT(date_of_birth, '%m-%d') BETWEEN :start_md AND :end_md
-        ORDER BY DATE_FORMAT(date_of_birth, '%m-%d') ASC, full_name ASC
-    ";
-    $paramsBirth = [':start_md' => $startMd, ':end_md' => $endMd];
-} else {
-    // Window wraps year end; two ranges
-    $sqlBirthdays = "
-        SELECT full_name, date_of_birth, room_number, bed_number
-        FROM residents
-        WHERE status = 'Active'
-          AND date_of_birth IS NOT NULL
-          AND (
-            DATE_FORMAT(date_of_birth, '%m-%d') >= :start_md
-            OR DATE_FORMAT(date_of_birth, '%m-%d') <= :end_md
-          )
-        ORDER BY DATE_FORMAT(date_of_birth, '%m-%d') ASC, full_name ASC
-    ";
-    $paramsBirth = [':start_md' => $startMd, ':end_md' => $endMd];
-}
-
-$stmtBirth = $pdo->prepare($sqlBirthdays);
-$stmtBirth->execute($paramsBirth);
-$upcomingBirthdays = $stmtBirth->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
