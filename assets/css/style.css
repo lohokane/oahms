@@ -49,6 +49,9 @@ a {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     font-weight: 600;
     letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .sidebar-nav {

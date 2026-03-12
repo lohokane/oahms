@@ -51,7 +51,7 @@ $dischargedResidents = (int)$pdo->query('SELECT COUNT(*) AS c FROM residents WHE
 <body>
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-header"><img src="../assets/images/logo.jpg" class="logo_sidebar" alt="Logo" loading="eager" fetchpriority="high"></div>
+        <div class="sidebar-header"><img src="../assets/images/logo.jpg" class="logo_sidebar" alt="Logo" loading="eager" fetchpriority="high" style="border-radius: 10px; width: 100px;">OAHMS</div>
         <nav class="sidebar-nav">
             <div>
                 <div class="nav-section-title">Overview</div>
