@@ -172,7 +172,7 @@ function sort_link(string $label, string $key, string $currentSort, string $curr
                         <?php foreach ($residents as $res): ?>
                             <tr>
                                 <td>
-                                    <a class="btn btn-secondary btn-sm" href="resident_view.php?id=<?= (int)$res['id'] ?>">
+                                    <a href="resident_view.php?id=<?= (int)$res['id'] ?>">
                                     <?= h($res['full_name']) ?>
                                     </a>
                                 </td>
