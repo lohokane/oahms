@@ -150,6 +150,7 @@ $invoices = $stmt->fetchAll();
                                     <?php endif; ?>
                                 </td>
                                 <td>
+                                    <a class="btn btn-sm" href="payment_form.php?invoice_id=<?= (int)$inv['id'] ?>">Pay</a>
                                     <a class="btn btn-secondary btn-sm" href="invoice_form.php?id=<?= (int)$inv['id'] ?>">Edit</a>
                                     <form method="post" action="invoice_delete.php" style="display:inline;" onsubmit="return confirm('Delete this invoice?');">
                                         <input type="hidden" name="id" value="<?= (int)$inv['id'] ?>">

@@ -16,6 +16,16 @@ $resident = $stmt->fetch();
 if (!$resident) {
     redirect('residents.php');
 }
+
+// Invoices for this resident
+$stmtInv = $pdo->prepare('
+    SELECT i.*
+    FROM invoices i
+    WHERE i.resident_id = :resident_id
+    ORDER BY i.billing_month DESC, i.created_at DESC
+');
+$stmtInv->execute([':resident_id' => $id]);
+$invoices = $stmtInv->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -108,7 +118,80 @@ if (!$resident) {
                         <div class="form-label">Joining date</div>
                         <div><?= h($resident['joining_date'] ?? '-') ?></div>
                     </div>
+                    <div class="form-group">
+                        <div class="form-label">Photo</div>
+                        <div>
+                            <?php if (!empty($resident['photo_path'])): ?>
+                                <img src="../<?= h($resident['photo_path']) ?>" alt="Resident photo" style="max-width: 160px; border-radius: 0.5rem;">
+                            <?php else: ?>
+                                -
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-label">Document</div>
+                        <div>
+                            <?php if (!empty($resident['document_path'])): ?>
+                                <?php
+                                $docName = $resident['document_name'] ?: basename($resident['document_path']);
+                                $ext = strtolower(pathinfo($resident['document_path'], PATHINFO_EXTENSION));
+                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+                                ?>
+                                <?php if ($isImage): ?>
+                                    <img src="../<?= h($resident['document_path']) ?>" alt="Resident document" style="max-width: 160px; border-radius: 0.5rem; display:block; margin-bottom:0.35rem;">
+                                <?php endif; ?>
+                                <a href="../<?= h($resident['document_path']) ?>" target="_blank"><?= h($docName) ?></a>
+                            <?php else: ?>
+                                -
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <div class="table-wrapper" style="margin-top: 1.5rem;">
+                <div class="table-header">
+                    <div>Invoices</div>
+                </div>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Billing month</th>
+                        <th>Room rent</th>
+                        <th>Additional</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($invoices): ?>
+                        <?php foreach ($invoices as $inv): ?>
+                            <tr>
+                                <td><?= h($inv['billing_month']) ?></td>
+                                <td>₹<?= number_format((float)$inv['room_rent'], 2) ?></td>
+                                <td>₹<?= number_format((float)$inv['additional_charges'], 2) ?></td>
+                                <td>₹<?= number_format((float)$inv['total_amount'], 2) ?></td>
+                                <td>
+                                    <?php if ($inv['payment_status'] === 'PAID'): ?>
+                                        <span class="badge badge-success">Paid</span>
+                                    <?php elseif ($inv['payment_status'] === 'PENDING'): ?>
+                                        <span class="badge badge-warning">Pending</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-danger">Partial</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a class="btn btn-sm" href="payment_form.php?invoice_id=<?= (int)$inv['id'] ?>">Pay</a>
+                                    <a class="btn btn-secondary btn-sm" href="invoice_form.php?id=<?= (int)$inv['id'] ?>">Edit</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="6">No invoices for this resident.</td></tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </section>
     </main>

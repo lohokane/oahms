@@ -35,6 +35,7 @@ $sortMap = [
     'name' => 'r.full_name',
     'room' => 'r.room_number',
     'joining_date' => 'r.joining_date',
+    'dob' => 'r.date_of_birth',
     'monthly_fee' => 'r.monthly_fee',
     'status' => 'r.status',
     'created_at' => 'r.created_at',
@@ -162,7 +163,7 @@ function sort_link(string $label, string $key, string $currentSort, string $curr
                         <th>Gender</th>
                         <th><?= sort_link('Monthly fee', 'monthly_fee', (string)$sort, (string)$dir, $search) ?></th>
                         <th><?= sort_link('Status', 'status', (string)$sort, (string)$dir, $search) ?></th>
-                        <th><?= sort_link('Joining date', 'joining_date', (string)$sort, (string)$dir, $search) ?></th>
+                        <th><?= sort_link('Date of birth', 'dob', (string)$sort, (string)$dir, $search) ?></th>
                         <th>Actions</th>
                     </tr>
                     </thead>
@@ -184,7 +185,7 @@ function sort_link(string $label, string $key, string $currentSort, string $curr
                                         <span class="badge badge-warning">Discharged</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><?= h($res['joining_date']) ?></td>
+                                <td><?= h($res['date_of_birth'] ?? '-') ?></td>
                                 <td>
                                     <a class="btn btn-secondary btn-sm" href="resident_view.php?id=<?= (int)$res['id'] ?>">View</a>
                                     <a class="btn btn-secondary btn-sm" href="resident_form.php?id=<?= (int)$res['id'] ?>">Edit</a>

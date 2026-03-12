@@ -19,6 +19,9 @@ $resident = [
     'monthly_fee'               => 0,
     'joining_date'              => date('Y-m-d'),
     'status'                    => 'Active',
+    'photo_path'                => null,
+    'document_path'             => null,
+    'document_name'             => null,
 ];
 
 if ($isEdit) {
@@ -98,7 +101,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id = (int) $pdo->lastInsertId();
                 $isEdit = true;
             }
-            $success = 'Resident saved successfully.';
+
+            // Handle uploads (max 5MB each)
+            $maxSize = 5 * 1024 * 1024;
+            $updates = [];
+
+            if (!empty($_FILES['photo']['name']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                if ($_FILES['photo']['size'] > $maxSize) {
+                    $error = 'Photo must be 5MB or smaller.';
+                } else {
+                    $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
+                    $dir = dirname(__DIR__) . '/assets/images/residents';
+                    if (!is_dir($dir)) {
+                        mkdir($dir, 0775, true);
+                    }
+                    $filename = 'resident_' . $id . '_' . time() . ($ext ? '.' . $ext : '');
+                    $dest = $dir . '/' . $filename;
+                    if (move_uploaded_file($_FILES['photo']['tmp_name'], $dest)) {
+                        $updates['photo_path'] = 'assets/images/residents/' . $filename;
+                    }
+                }
+            }
+
+            if (!empty($_FILES['document']['name']) && $_FILES['document']['error'] === UPLOAD_ERR_OK) {
+                if ($_FILES['document']['size'] > $maxSize) {
+                    $error = 'Document must be 5MB or smaller.';
+                } else {
+                    $ext = pathinfo($_FILES['document']['name'], PATHINFO_EXTENSION);
+                    $dir = dirname(__DIR__) . '/assets/documents/residents';
+                    if (!is_dir($dir)) {
+                        mkdir($dir, 0775, true);
+                    }
+                    $filename = 'resident_doc_' . $id . '_' . time() . ($ext ? '.' . $ext : '');
+                    $dest = $dir . '/' . $filename;
+                    if (move_uploaded_file($_FILES['document']['tmp_name'], $dest)) {
+                        $updates['document_path'] = 'assets/documents/residents/' . $filename;
+                        $updates['document_name'] = $_FILES['document']['name'];
+                    }
+                }
+            }
+
+            if ($updates) {
+                $setParts = [];
+                $updParams = [':id' => $id];
+                foreach ($updates as $col => $val) {
+                    $setParts[] = $col . ' = :' . $col;
+                    $updParams[':' . $col] = $val;
+                    $resident[$col] = $val;
+                }
+                $sqlUpd = 'UPDATE residents SET ' . implode(', ', $setParts) . ' WHERE id = :id';
+                $stmtUpd = $pdo->prepare($sqlUpd);
+                $stmtUpd->execute($updParams);
+            }
+
+            if (!$error) {
+                $success = 'Resident saved successfully.';
+            }
         } catch (PDOException $e) {
             $error = 'Error saving resident.';
         }
@@ -154,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="alert alert-success" data-flash><?= h($success) ?></div>
                 <?php endif; ?>
 
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label" for="full_name">Full name</label>
@@ -216,6 +274,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="Deceased" <?= $resident['status'] === 'Deceased' ? 'selected' : '' ?>>Deceased</option>
                                 <option value="Discharged" <?= $resident['status'] === 'Discharged' ? 'selected' : '' ?>>Discharged</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="photo">Resident photo</label>
+                            <input class="form-input" type="file" id="photo" name="photo" accept="image/*">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="document">Resident document (max 5MB)</label>
+                            <input class="form-input" type="file" id="document" name="document">
                         </div>
                     </div>
                     <div class="form-actions">

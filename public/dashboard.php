@@ -28,6 +28,48 @@ $recentPayments = $pdo->query('
     ORDER BY p.payment_date DESC
     LIMIT 5
 ')->fetchAll();
+
+// Upcoming birthdays (next 30 days)
+try {
+    $start = new DateTime('today');
+} catch (Exception $e) {
+    $start = new DateTime();
+}
+$end = (clone $start)->modify('+30 days');
+
+$startMd = $start->format('m-d');
+$endMd = $end->format('m-d');
+
+if ($startMd <= $endMd) {
+    // Simple case within same year segment
+    $sqlBirthdays = "
+        SELECT full_name, date_of_birth, room_number, bed_number
+        FROM residents
+        WHERE status = 'Active'
+          AND date_of_birth IS NOT NULL
+          AND DATE_FORMAT(date_of_birth, '%m-%d') BETWEEN :start_md AND :end_md
+        ORDER BY DATE_FORMAT(date_of_birth, '%m-%d') ASC, full_name ASC
+    ";
+    $paramsBirth = [':start_md' => $startMd, ':end_md' => $endMd];
+} else {
+    // Window wraps year end; two ranges
+    $sqlBirthdays = "
+        SELECT full_name, date_of_birth, room_number, bed_number
+        FROM residents
+        WHERE status = 'Active'
+          AND date_of_birth IS NOT NULL
+          AND (
+            DATE_FORMAT(date_of_birth, '%m-%d') >= :start_md
+            OR DATE_FORMAT(date_of_birth, '%m-%d') <= :end_md
+          )
+        ORDER BY DATE_FORMAT(date_of_birth, '%m-%d') ASC, full_name ASC
+    ";
+    $paramsBirth = [':start_md' => $startMd, ':end_md' => $endMd];
+}
+
+$stmtBirth = $pdo->prepare($sqlBirthdays);
+$stmtBirth->execute($paramsBirth);
+$upcomingBirthdays = $stmtBirth->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -163,6 +205,40 @@ $recentPayments = $pdo->query('
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr><td colspan="4">No payments recorded yet.</td></tr>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Upcoming birthdays (next 30 days)</div>
+                    </div>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Resident</th>
+                            <th>Date of birth</th>
+                            <th>Room / Bed</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php if ($upcomingBirthdays): ?>
+                            <?php foreach ($upcomingBirthdays as $b): ?>
+                                <tr>
+                                    <td><?= h($b['full_name']) ?></td>
+                                    <td><?= h($b['date_of_birth']) ?></td>
+                                    <td>
+                                        <?php if (!empty($b['room_number']) || !empty($b['bed_number'])): ?>
+                                            Room <?= h($b['room_number'] ?? '-') ?> / Bed <?= h($b['bed_number'] ?? '-') ?>
+                                        <?php else: ?>
+                                            -
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="3">No upcoming birthdays.</td></tr>
                         <?php endif; ?>
                         </tbody>
                     </table>
