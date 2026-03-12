@@ -27,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="login-page">
 <div class="login-card">
-    <h1 class="login-title">OAHMS Admin</h1>
-    <p class="login-subtitle">Sign in to manage residents, rooms and billing.</p>
+    <h1 class="login-title"><img src="../assets/images/logo.jpg" class="logo_sidebar" alt="Logo" loading="eager" fetchpriority="high" style="border-radius: 10px; width: 100px;">OAHMS Admin</h1>
+    <p class="login-subtitle">Sign in to manage residents, invoice and billing.</p>
 
     <?php if ($error): ?>
         <div class="alert alert-error" data-flash><?= h($error) ?></div>
