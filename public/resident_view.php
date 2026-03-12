@@ -26,6 +26,16 @@ $stmtInv = $pdo->prepare('
 ');
 $stmtInv->execute([':resident_id' => $id]);
 $invoices = $stmtInv->fetchAll();
+
+// Documents for this resident
+$stmtDocs = $pdo->prepare('
+    SELECT document_path, document_name, created_at
+    FROM residents_documents
+    WHERE resident_id = :resident_id
+    ORDER BY created_at DESC
+');
+$stmtDocs->execute([':resident_id' => $id]);
+$documents = $stmtDocs->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -129,18 +139,22 @@ $invoices = $stmtInv->fetchAll();
                         </div>
                     </div>
                     <div class="form-group">
-                        <div class="form-label">Document</div>
+                        <div class="form-label">Documents</div>
                         <div>
-                            <?php if (!empty($resident['document_path'])): ?>
-                                <?php
-                                $docName = $resident['document_name'] ?: basename($resident['document_path']);
-                                $ext = strtolower(pathinfo($resident['document_path'], PATHINFO_EXTENSION));
-                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
-                                ?>
-                                <?php if ($isImage): ?>
-                                    <img src="../<?= h($resident['document_path']) ?>" alt="Resident document" style="max-width: 160px; border-radius: 0.5rem; display:block; margin-bottom:0.35rem;">
-                                <?php endif; ?>
-                                <a href="../<?= h($resident['document_path']) ?>" target="_blank"><?= h($docName) ?></a>
+                            <?php if ($documents): ?>
+                                <?php foreach ($documents as $doc): ?>
+                                    <?php
+                                    $docName = $doc['document_name'] ?: basename($doc['document_path']);
+                                    $ext = strtolower(pathinfo($doc['document_path'], PATHINFO_EXTENSION));
+                                    $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+                                    ?>
+                                    <div style="margin-bottom:0.5rem;">
+                                        <?php if ($isImage): ?>
+                                            <img src="../<?= h($doc['document_path']) ?>" alt="Resident document" style="max-width: 120px; border-radius: 0.5rem; display:block; margin-bottom:0.2rem;">
+                                        <?php endif; ?>
+                                        <a href="../<?= h($doc['document_path']) ?>" target="_blank"><?= h($docName) ?></a>
+                                    </div>
+                                <?php endforeach; ?>
                             <?php else: ?>
                                 -
                             <?php endif; ?>

@@ -102,13 +102,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $isEdit = true;
             }
 
-            // Handle uploads (max 5MB each)
-            $maxSize = 5 * 1024 * 1024;
-            $updates = [];
+            // Handle uploads
+            $photoMaxSize = 2 * 1024 * 1024;        // 2MB
+            $docMaxSize   = 5 * 1024 * 1024;        // 5MB each
+            $maxDocs      = 10;
 
+            // Photo (single)
             if (!empty($_FILES['photo']['name']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                if ($_FILES['photo']['size'] > $maxSize) {
-                    $error = 'Photo must be 5MB or smaller.';
+                if ($_FILES['photo']['size'] > $photoMaxSize) {
+                    $error = 'Photo must be 2MB or smaller.';
                 } else {
                     $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
                     $dir = dirname(__DIR__) . '/assets/images/residents';
@@ -118,40 +120,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $filename = 'resident_' . $id . '_' . time() . ($ext ? '.' . $ext : '');
                     $dest = $dir . '/' . $filename;
                     if (move_uploaded_file($_FILES['photo']['tmp_name'], $dest)) {
-                        $updates['photo_path'] = 'assets/images/residents/' . $filename;
+                        $photoPath = 'assets/images/residents/' . $filename;
+                        $upd = $pdo->prepare('UPDATE residents SET photo_path = :p WHERE id = :id');
+                        $upd->execute([':p' => $photoPath, ':id' => $id]);
+                        $resident['photo_path'] = $photoPath;
                     }
                 }
             }
 
-            if (!empty($_FILES['document']['name']) && $_FILES['document']['error'] === UPLOAD_ERR_OK) {
-                if ($_FILES['document']['size'] > $maxSize) {
-                    $error = 'Document must be 5MB or smaller.';
-                } else {
-                    $ext = pathinfo($_FILES['document']['name'], PATHINFO_EXTENSION);
-                    $dir = dirname(__DIR__) . '/assets/documents/residents';
-                    if (!is_dir($dir)) {
-                        mkdir($dir, 0775, true);
-                    }
-                    $filename = 'resident_doc_' . $id . '_' . time() . ($ext ? '.' . $ext : '');
-                    $dest = $dir . '/' . $filename;
-                    if (move_uploaded_file($_FILES['document']['tmp_name'], $dest)) {
-                        $updates['document_path'] = 'assets/documents/residents/' . $filename;
-                        $updates['document_name'] = $_FILES['document']['name'];
-                    }
-                }
-            }
+            // Multiple documents (up to 10 per resident, 5MB each)
+            if (!empty($_FILES['documents']['name']) && !$error) {
+                $names = $_FILES['documents']['name'];
+                $tmpNames = $_FILES['documents']['tmp_name'];
+                $sizes = $_FILES['documents']['size'];
+                $errors = $_FILES['documents']['error'];
 
-            if ($updates) {
-                $setParts = [];
-                $updParams = [':id' => $id];
-                foreach ($updates as $col => $val) {
-                    $setParts[] = $col . ' = :' . $col;
-                    $updParams[':' . $col] = $val;
-                    $resident[$col] = $val;
+                // Count existing docs
+                $stmtCount = $pdo->prepare('SELECT COUNT(*) AS c FROM residents_documents WHERE resident_id = :id');
+                $stmtCount->execute([':id' => $id]);
+                $existing = (int)$stmtCount->fetch()['c'];
+
+                $toUpload = [];
+                foreach ($names as $idx => $origName) {
+                    if ($origName === '' || $errors[$idx] !== UPLOAD_ERR_OK) {
+                        continue;
+                    }
+                    if ($sizes[$idx] > $docMaxSize) {
+                        $error = 'Each document must be 5MB or smaller.';
+                        break;
+                    }
+                    $toUpload[] = $idx;
                 }
-                $sqlUpd = 'UPDATE residents SET ' . implode(', ', $setParts) . ' WHERE id = :id';
-                $stmtUpd = $pdo->prepare($sqlUpd);
-                $stmtUpd->execute($updParams);
+
+                if (!$error) {
+                    if ($existing + count($toUpload) > $maxDocs) {
+                        $error = 'Maximum 10 documents allowed per resident.';
+                    } else {
+                        $dir = dirname(__DIR__) . '/assets/documents/residents';
+                        if (!is_dir($dir)) {
+                            mkdir($dir, 0775, true);
+                        }
+                        $insertStmt = $pdo->prepare('
+                            INSERT INTO residents_documents (resident_id, document_path, document_name)
+                            VALUES (:resident_id, :path, :name)
+                        ');
+                        foreach ($toUpload as $idx) {
+                            $ext = pathinfo($names[$idx], PATHINFO_EXTENSION);
+                            $filename = 'resident_doc_' . $id . '_' . time() . '_' . $idx . ($ext ? '.' . $ext : '');
+                            $dest = $dir . '/' . $filename;
+                            if (move_uploaded_file($tmpNames[$idx], $dest)) {
+                                $relPath = 'assets/documents/residents/' . $filename;
+                                $insertStmt->execute([
+                                    ':resident_id' => $id,
+                                    ':path'        => $relPath,
+                                    ':name'        => $names[$idx],
+                                ]);
+                            }
+                        }
+                    }
+                }
             }
 
             if (!$error) {
@@ -280,8 +307,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input class="form-input" type="file" id="photo" name="photo" accept="image/*">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="document">Resident document (max 5MB)</label>
-                            <input class="form-input" type="file" id="document" name="document">
+                            <label class="form-label" for="documents">Resident documents (max 10, 5MB each)</label>
+                            <input class="form-input" type="file" id="documents" name="documents[]" multiple>
                         </div>
                     </div>
                     <div class="form-actions">

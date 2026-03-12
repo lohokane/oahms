@@ -60,6 +60,16 @@ CREATE TABLE payments (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE residents_documents (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    resident_id INT UNSIGNED NOT NULL,
+    document_path VARCHAR(255) NOT NULL,
+    document_name VARCHAR(255) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_res_docs_resident FOREIGN KEY (resident_id) REFERENCES residents(id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- After importing this schema, create at least one admin user.
 -- Example PHP snippet to generate a password hash:
 -- <?php echo password_hash('change_me_password', PASSWORD_DEFAULT); ?>
