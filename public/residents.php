@@ -171,7 +171,11 @@ function sort_link(string $label, string $key, string $currentSort, string $curr
                     <?php if ($residents): ?>
                         <?php foreach ($residents as $res): ?>
                             <tr>
-                                <td><?= h($res['full_name']) ?></td>
+                                <td>
+                                    <a class="btn btn-secondary btn-sm" href="resident_view.php?id=<?= (int)$res['id'] ?>">
+                                    <?= h($res['full_name']) ?>
+                                    </a>
+                                </td>
                                 <td><?= h($res['room_number'] ?? '-') ?></td>
                                 <td><?= h($res['bed_number'] ?? '-') ?></td>
                                 <td><?= h($res['gender']) ?></td>
