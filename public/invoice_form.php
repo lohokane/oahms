@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-header">OAHMS</div>
+        <div class="sidebar-header"><img src="../assets/images/logo.jpg" class="logo_sidebar" alt="Logo" loading="eager" fetchpriority="high"></div>
         <nav class="sidebar-nav">
             <div>
                 <div class="nav-section-title">Overview</div>
