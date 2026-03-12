@@ -24,8 +24,11 @@ $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 $stmt = $pdo->prepare("
     SELECT i.id,
            i.billing_month,
+           i.room_rent,
+           i.additional_charges,
            i.total_amount,
            i.payment_status,
+           i.notes,
            r.full_name,
            r.room_number,
            r.bed_number
@@ -112,8 +115,12 @@ $invoices = $stmt->fetchAll();
                     <tr>
                         <th>Resident</th>
                         <th>Billing month</th>
-                        <th>Amount</th>
+                        <th>Room rent</th>
+                        <th>Additional</th>
+                        <th>Total</th>
+                        <th>Notes</th>
                         <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -121,13 +128,18 @@ $invoices = $stmt->fetchAll();
                         <?php foreach ($invoices as $inv): ?>
                             <tr>
                                 <td>
-                                    <?= h($inv['full_name']) ?>
+                                    <a href="payment_form.php?invoice_id=<?= (int)$inv['id'] ?>">
+                                        <?= h($inv['full_name']) ?>
+                                    </a>
                                     <?php if (!empty($inv['room_number']) || !empty($inv['bed_number'])): ?>
                                         <span class="card-pill">Room <?= h($inv['room_number'] ?? '-') ?> / Bed <?= h($inv['bed_number'] ?? '-') ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td><?= h($inv['billing_month']) ?></td>
+                                <td>₹<?= number_format((float)$inv['room_rent'], 2) ?></td>
+                                <td>₹<?= number_format((float)$inv['additional_charges'], 2) ?></td>
                                 <td>₹<?= number_format((float)$inv['total_amount'], 2) ?></td>
+                                <td><?= h($inv['notes'] ?? '') ?></td>
                                 <td>
                                     <?php if ($inv['payment_status'] === 'PAID'): ?>
                                         <span class="badge badge-success">Paid</span>
@@ -137,10 +149,17 @@ $invoices = $stmt->fetchAll();
                                         <span class="badge badge-danger">Partial</span>
                                     <?php endif; ?>
                                 </td>
+                                <td>
+                                    <a class="btn btn-secondary btn-sm" href="invoice_form.php?id=<?= (int)$inv['id'] ?>">Edit</a>
+                                    <form method="post" action="invoice_delete.php" style="display:inline;" onsubmit="return confirm('Delete this invoice?');">
+                                        <input type="hidden" name="id" value="<?= (int)$inv['id'] ?>">
+                                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                                    </form>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="4">No invoices found.</td></tr>
+                        <tr><td colspan="8">No invoices found.</td></tr>
                     <?php endif; ?>
                     </tbody>
                 </table>

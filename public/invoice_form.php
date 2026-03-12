@@ -4,7 +4,9 @@ require_admin_login();
 
 $pdo = get_db();
 
-// For simplicity this form only creates invoices (no edit).
+// Create / edit invoice
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$isEdit = $id > 0;
 
 // Residents for dropdown
 $resStmt = $pdo->query("SELECT id, full_name, monthly_fee FROM residents WHERE status = 'Active' ORDER BY full_name ASC");
@@ -23,6 +25,22 @@ $data = [
 $error = '';
 $success = '';
 
+if ($isEdit && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $stmt = $pdo->prepare('SELECT * FROM invoices WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        redirect('invoices.php');
+    }
+    $data['resident_id'] = (int)$row['resident_id'];
+    $data['billing_month'] = $row['billing_month'];
+    $data['room_rent'] = (float)$row['room_rent'];
+    $data['additional_charges'] = (float)$row['additional_charges'];
+    $data['total_amount'] = (float)$row['total_amount'];
+    $data['payment_status'] = $row['payment_status'];
+    $data['notes'] = $row['notes'] ?? '';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data['resident_id'] = (int) ($_POST['resident_id'] ?? 0);
     $data['billing_month'] = $_POST['billing_month'] ?? date('Y-m');
@@ -39,25 +57,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($data['total_amount'] <= 0) {
         $error = 'Total amount must be greater than zero.';
     } else {
-        $stmt = $pdo->prepare('
-            INSERT INTO invoices
-            (resident_id, billing_month, room_rent, additional_charges, total_amount, payment_status, notes)
-            VALUES
-            (:resident_id, :billing_month, :room_rent, :additional_charges, :total_amount, :payment_status, :notes)
-        ');
         try {
-            $stmt->execute([
-                ':resident_id'        => $data['resident_id'],
-                ':billing_month'      => $data['billing_month'],
-                ':room_rent'          => $data['room_rent'],
-                ':additional_charges' => $data['additional_charges'],
-                ':total_amount'       => $data['total_amount'],
-                ':payment_status'     => $data['payment_status'],
-                ':notes'              => $data['notes'],
-            ]);
-            $success = 'Invoice created successfully.';
+            if ($isEdit) {
+                $stmt = $pdo->prepare('
+                    UPDATE invoices
+                    SET resident_id = :resident_id,
+                        billing_month = :billing_month,
+                        room_rent = :room_rent,
+                        additional_charges = :additional_charges,
+                        total_amount = :total_amount,
+                        payment_status = :payment_status,
+                        notes = :notes
+                    WHERE id = :id
+                ');
+                $stmt->execute([
+                    ':resident_id'        => $data['resident_id'],
+                    ':billing_month'      => $data['billing_month'],
+                    ':room_rent'          => $data['room_rent'],
+                    ':additional_charges' => $data['additional_charges'],
+                    ':total_amount'       => $data['total_amount'],
+                    ':payment_status'     => $data['payment_status'],
+                    ':notes'              => $data['notes'],
+                    ':id'                 => $id,
+                ]);
+                $success = 'Invoice updated successfully.';
+            } else {
+                $stmt = $pdo->prepare('
+                    INSERT INTO invoices
+                    (resident_id, billing_month, room_rent, additional_charges, total_amount, payment_status, notes)
+                    VALUES
+                    (:resident_id, :billing_month, :room_rent, :additional_charges, :total_amount, :payment_status, :notes)
+                ');
+                $stmt->execute([
+                    ':resident_id'        => $data['resident_id'],
+                    ':billing_month'      => $data['billing_month'],
+                    ':room_rent'          => $data['room_rent'],
+                    ':additional_charges' => $data['additional_charges'],
+                    ':total_amount'       => $data['total_amount'],
+                    ':payment_status'     => $data['payment_status'],
+                    ':notes'              => $data['notes'],
+                ]);
+                $success = 'Invoice created successfully.';
+            }
         } catch (PDOException $e) {
-            $error = 'Error creating invoice. There may already be an invoice for this resident and month.';
+            $error = $isEdit
+                ? 'Error updating invoice.'
+                : 'Error creating invoice. There may already be an invoice for this resident and month.';
         }
     }
 }
@@ -66,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>New Invoice - OAHMS</title>
+    <title><?= $isEdit ? 'Edit Invoice' : 'New Invoice' ?> - OAHMS</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
@@ -98,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </header>
         <section class="content">
             <div class="page-title">
-                <h1>New Invoice</h1>
+                <h1><?= $isEdit ? 'Edit Invoice' : 'New Invoice' ?></h1>
                 <a href="invoices.php" class="btn btn-secondary btn-sm">Back to list</a>
             </div>
 
@@ -154,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div class="form-actions">
                         <a href="invoices.php" class="btn btn-secondary btn-sm">Cancel</a>
-                        <button class="btn btn-sm" type="submit">Create invoice</button>
+                        <button class="btn btn-sm" type="submit"><?= $isEdit ? 'Save changes' : 'Create invoice' ?></button>
                     </div>
                 </form>
             </div>

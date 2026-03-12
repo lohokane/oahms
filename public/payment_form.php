@@ -4,14 +4,20 @@ require_admin_login();
 
 $pdo = get_db();
 
+// Optional deep-link: ?invoice_id=123
+$prefillInvoiceId = isset($_GET['invoice_id']) ? (int)$_GET['invoice_id'] : 0;
+
 // Fetch pending/partial invoices for dropdown
 $invStmt = $pdo->query('
     SELECT i.id,
            i.billing_month,
            i.total_amount,
+           i.additional_charges,
+           i.notes,
            i.payment_status,
            r.full_name,
-           r.resident_identifier
+           r.room_number,
+           r.bed_number
     FROM invoices i
     JOIN residents r ON r.id = i.resident_id
     WHERE i.payment_status IN ("PENDING", "PARTIAL")
@@ -29,6 +35,10 @@ $data = [
 
 $error = '';
 $success = '';
+
+if ($prefillInvoiceId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $data['invoice_id'] = $prefillInvoiceId;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data['invoice_id'] = (int) ($_POST['invoice_id'] ?? 0);
@@ -94,6 +104,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Prefill suggested payment amount (remaining due) when invoice is selected via deep-link
+$invoiceDue = null;
+if ((int)$data['invoice_id'] > 0) {
+    $stmtInv = $pdo->prepare('SELECT total_amount FROM invoices WHERE id = :id');
+    $stmtInv->execute([':id' => (int)$data['invoice_id']]);
+    $invRow = $stmtInv->fetch();
+    if ($invRow) {
+        $stmtSum = $pdo->prepare('SELECT IFNULL(SUM(payment_amount), 0) AS paid FROM payments WHERE invoice_id = :invoice_id');
+        $stmtSum->execute([':invoice_id' => (int)$data['invoice_id']]);
+        $paid = (float)($stmtSum->fetch()['paid'] ?? 0);
+        $invoiceDue = max(0, (float)$invRow['total_amount'] - $paid);
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' && (float)$data['payment_amount'] <= 0) {
+            $data['payment_amount'] = $invoiceDue;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -150,7 +177,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="">-- Select invoice --</option>
                                 <?php foreach ($invoices as $inv): ?>
                                     <?php
-                                    $label = $inv['full_name'] . ' (' . $inv['resident_identifier'] . ') - ' .
+                                    $loc = '';
+                                    if (!empty($inv['room_number']) || !empty($inv['bed_number'])) {
+                                        $loc = ' - Room ' . ($inv['room_number'] ?? '-') . '/Bed ' . ($inv['bed_number'] ?? '-');
+                                    }
+                                    $label = $inv['full_name'] . $loc . ' - ' .
                                         $inv['billing_month'] . ' - ₹' . number_format((float)$inv['total_amount'], 2) .
                                         ' [' . $inv['payment_status'] . ']';
                                     ?>
@@ -159,6 +190,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                            <?php if ($invoiceDue !== null): ?>
+                                <div class="form-label" style="margin-top: 0.35rem;">Due: ₹<?= number_format((float)$invoiceDue, 2) ?></div>
+                            <?php endif; ?>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="payment_date">Payment date</label>

@@ -5,6 +5,8 @@ require_admin_login();
 $pdo = get_db();
 
 $search = trim($_GET['q'] ?? '');
+$statusFilter = trim($_GET['status'] ?? '');
+$roomFilter = trim($_GET['room'] ?? '');
 $sort = $_GET['sort'] ?? 'created_at';
 $dir = strtolower($_GET['dir'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
 $params = [];
@@ -15,6 +17,16 @@ if ($search !== '') {
     $params[':q1'] = '%' . $search . '%';
     $params[':q2'] = '%' . $search . '%';
     $params[':q3'] = '%' . $search . '%';
+}
+
+if ($statusFilter !== '') {
+    $whereParts[] = 'r.status = :status';
+    $params[':status'] = $statusFilter;
+}
+
+if ($roomFilter !== '') {
+    $whereParts[] = 'r.room_number = :room';
+    $params[':room'] = $roomFilter;
 }
 
 $where = $whereParts ? ('WHERE ' . implode(' AND ', $whereParts)) : '';
@@ -57,11 +69,13 @@ function sort_link(string $label, string $key, string $currentSort, string $curr
     if ($currentSort === $key && strtoupper($currentDir) === 'ASC') {
         $nextDir = 'desc';
     }
-    $qs = http_build_query([
+    $qs = http_build_query(array_filter([
         'q' => $search,
+        'status' => $_GET['status'] ?? '',
+        'room' => $_GET['room'] ?? '',
         'sort' => $key,
         'dir' => $nextDir,
-    ]);
+    ], static fn($v) => $v !== ''));
     return '<a href="residents.php?' . h($qs) . '">' . h($label) . '</a>';
 }
 ?>
@@ -114,9 +128,23 @@ function sort_link(string $label, string $key, string $currentSort, string $curr
                             <label class="form-label" for="q">Search (name / room / guardian phone)</label>
                             <input class="form-input" type="text" id="q" name="q" value="<?= h($search) ?>">
                         </div>
+                        <div class="form-group">
+                            <label class="form-label" for="status">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Any</option>
+                                <option value="Active" <?= $statusFilter === 'Active' ? 'selected' : '' ?>>Active</option>
+                                <option value="Deceased" <?= $statusFilter === 'Deceased' ? 'selected' : '' ?>>Deceased</option>
+                                <option value="Discharged" <?= $statusFilter === 'Discharged' ? 'selected' : '' ?>>Discharged</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="room">Room number</label>
+                            <input class="form-input" type="text" id="room" name="room" value="<?= h($roomFilter) ?>">
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button class="btn btn-secondary btn-sm" type="submit">Search</button>
+                        <a class="btn btn-secondary btn-sm" href="residents.php">Reset</a>
                     </div>
                 </form>
             </div>
